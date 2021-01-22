@@ -62,7 +62,7 @@ if [[ -n "$POSTGRES_VALIAS_QUERY" ]]; then
 	hosts = $POSTGRES_HOSTS
 	user = $POSTGRES_USER
 	password = $POSTGRES_PASSWORD
-	dbname = $POSTGRES_VALIAS_DB
+	dbname = $POSTGRES_ALIAS_DB
 	query = $POSTGRES_VALIAS_QUERY
 	EOF
 

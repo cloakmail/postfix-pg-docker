@@ -42,13 +42,12 @@ The following environment variables are required for this:
 * `POSTGRES_HOSTS`: A list of one or more database hosts separated by spaces
 * `POSTGRES_USER`: The database user
 * `POSTGRES_PASSWORD`: The database user's password
+* `POSTGRES_ALIAS_DB`: The database in which the (virtual) alias table is stored
 
 #### Local Aliases
-* `POSTGRES_ALIAS_DB`: The database in which the alias table is stored
 * `POSTGRES_ALIAS_QUERY`: The query to find an alias, e.g. `SELECT forw_addr FROM mxaliases WHERE alias='%s'`.
 
 #### Virtual Aliases
-* `POSTGRES_VALIAS_DB`: The database in which the virtual alias table is stored
 * `POSTGRES_VALIAS_QUERY`: The query to find a virtual alias, e.g. `SELECT forw_addr FROM virtualaliases WHERE alias='%s'`.
 
 
