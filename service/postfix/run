@@ -1,0 +1,98 @@
+#!/bin/bash
+set -e
+
+# Avoid  warning: smtputf8_enable is true, but EAI support is not compiled in
+echo "smtputf8_enable = no" >> /etc/postfix/main.cf
+
+
+
+# cat >> /etc/postfix/main.cf << EOF
+# # limit smtp to loopback interface & compute engine doesn't support ipv6
+# inet_interfaces = loopback-only
+# inet_protocols = ipv4
+# EOF
+
+# Do we want to modify the config first with the script?
+# shellcheck disable=SC1091
+[ -f /etc/service/postfix/run.config ] && source /etc/service/postfix/run.config
+
+# Transform CONF_ env vars into postfix confs
+# E.g. "CONF_MYDOMAIN=example.com" is applied to the main.cf file as as "mydomain=example.com"
+printenv | grep '^CONF_' | sed 's/^CONF_\(.*\)=\(.*\)/\L\1\E=\2/' | xargs postconf -e
+
+
+if [[ -n "$MAILNAME" ]]; then
+	echo "$MAILNAME" > /etc/mailname
+	postconf -e myorigin="/etc/mailname"
+
+	cat >> /etc/postfix/main.cf <<- EOF
+	# Force ehlo behavior
+	smtp_always_send_ehlo = yes
+	smtp_helo_name = $MAILNAME
+	EOF
+fi
+
+if [[ -n "$ROOT_ALIAS" ]]; then
+	if [[ -f /etc/aliases ]]; then
+		sed -i '/^root:/d' /etc/aliases
+	fi
+	echo "root: $ROOT_ALIAS" >> /etc/aliases
+	newaliases
+fi
+
+if [[ -n "$TLS" ]]; then
+	cat >> /etc/postfix/main.cf <<- EOF
+	smtp_use_tls = yes
+	smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
+	EOF
+fi
+
+if [[ -n "$SASL_AUTH" ]]; then
+	cat >> /etc/postfix/main.cf <<- EOF
+	smtp_sasl_auth_enable = yes
+	smtp_sasl_password_maps = texthash:/etc/postfix/sasl_passwd
+	smtp_sasl_security_options = noanonymous
+	EOF
+
+	echo "$CONF_RELAYHOST $SASL_AUTH" > /etc/postfix/sasl_passwd
+fi
+
+if [[ -n "$POSTGRES_VALIAS_QUERY" ]]; then
+	cat >> /etc/postfix/pg_virtual_aliases.cf <<- EOF
+	hosts = $POSTGRES_HOSTS
+	user = $POSTGRES_USER
+	password = $POSTGRES_PASSWORD
+	dbname = $POSTGRES_VALIAS_DB
+	query = $POSTGRES_VALIAS_QUERY
+	EOF
+
+	postconf -e virtual_alias_maps=pgsql:/etc/postfix/pg_virtual_aliases.cf
+fi
+
+if [[ -n "$POSTGRES_ALIAS_QUERY" ]]; then
+	cat >> /etc/postfix/pg_aliases.cf <<- EOF
+	hosts = $POSTGRES_HOSTS
+	user = $POSTGRES_USER
+	password = $POSTGRES_PASSWORD
+	dbname = $POSTGRES_ALIAS_DB
+	query = $POSTGRES_ALIAS_QUERY
+	EOF
+
+	postconf -e alias_maps=pgsql:/etc/postfix/pg_aliases.cf
+fi
+
+
+if [[ -f "/usr/libexec/postfix/master" ]]; then
+	cmd="/usr/libexec/postfix/master"
+fi
+
+if [[ -f "/usr/lib/postfix/master" ]]; then
+	cmd="/usr/lib/postfix/master"
+fi
+
+if [[ -z "$cmd" ]]; then
+	echo "Could not find postfix master in /usr/lib or /usr/libexec"
+	exit 1
+fi
+
+"$cmd" -c /etc/postfix -d 2>&1
