@@ -40,13 +40,6 @@ if [[ -n "$ROOT_ALIAS" ]]; then
 	newaliases
 fi
 
-if [[ -n "$TLS" ]]; then
-	cat >> /etc/postfix/main.cf <<- EOF
-	smtp_use_tls = yes
-	smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
-	EOF
-fi
-
 if [[ -n "$SASL_AUTH" ]]; then
 	cat >> /etc/postfix/main.cf <<- EOF
 	smtp_sasl_auth_enable = yes
