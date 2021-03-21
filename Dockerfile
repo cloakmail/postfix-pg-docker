@@ -9,6 +9,7 @@ RUN apk add --no-cache \
   postfix \ 
 	postfix-pgsql \
 	rsyslog \
+	rsyslog-pgsql \
 	runit
 
 COPY service /etc/service

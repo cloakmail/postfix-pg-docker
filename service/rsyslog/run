@@ -1,4 +1,31 @@
 #!/bin/bash
 set -e
 
+if [[ -z "$POSTGRES_LOG_TABLE" || -z "$POSTGRES_LOG_HOST" || -z "$POSTGRES_LOG_USER" || -z "$POSTGRES_LOG_PASSWORD" || -z "$POSTGRES_LOG_DB" ]]; then
+  echo "Logging to Postgres is disabled"
+else
+  echo "Configuring logging to Postgres"
+  cat >/etc/rsyslog.d/pg_mail_log.conf <<EOL
+
+  module(load="ompgsql")
+
+  # Define SQL template for writing into the database
+  template(name="sql-syslog" type="list" option.sql="on") {
+    constant(value="INSERT INTO ${POSTGRES_LOG_TABLE} (raw_log, created_at) values ('")
+    property(name="msg")
+    constant(value="','")
+    property(name="timereported" dateformat="pgsql" date.inUTC="on")
+    constant(value="')")
+  }
+
+  action(type="ompgsql"
+        server="${POSTGRES_LOG_HOST}"
+        user="${POSTGRES_LOG_USER}"
+        pass="${POSTGRES_LOG_PASSWORD}"
+        db="${POSTGRES_LOG_DB}"
+        template="sql-syslog"
+        queue.type="linkedList")
+EOL
+fi
+
 exec rsyslogd -n
