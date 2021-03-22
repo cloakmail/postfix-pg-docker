@@ -5,8 +5,8 @@ if [[ -z "$POSTGRES_LOG_TABLE" || -z "$POSTGRES_LOG_HOST" || -z "$POSTGRES_LOG_U
   echo "Logging to Postgres is disabled"
 else
   echo "Configuring logging to Postgres"
-  
-  mkdir /etc/rsyslog.d
+
+  mkdir -p /etc/rsyslog.d
   cat >/etc/rsyslog.d/pg_mail_log.conf <<EOL
 
   module(load="ompgsql")
