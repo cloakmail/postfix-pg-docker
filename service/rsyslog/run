@@ -13,9 +13,9 @@ else
 
   # Define SQL template for writing into the database
   template(name="sql-syslog" type="list" option.sql="on") {
-    constant(value="INSERT INTO ${POSTGRES_LOG_TABLE} (raw_log, created_at) values ('")
+    constant(value="INSERT INTO ${POSTGRES_LOG_TABLE} (raw_log, created_at) values (trim('")
     property(name="msg")
-    constant(value="','")
+    constant(value="'),'")
     property(name="timereported" dateformat="pgsql" date.inUTC="on")
     constant(value="')")
   }
